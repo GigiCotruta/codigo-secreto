@@ -33,7 +33,7 @@ export async function POST(
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (message.includes("Missing required environment variable")) {
-      return failure("Falta configurar variables de entorno de Supabase en .env.local.", 500);
+      return failure("Faltan variables de entorno de Supabase en el servidor.", 500);
     }
     return failure("Error interno al actualizar presencia.", 500);
   }

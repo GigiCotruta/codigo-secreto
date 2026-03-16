@@ -131,7 +131,7 @@ export async function POST(
     const message = error instanceof Error ? error.message : "No se pudo ejecutar la acción.";
 
     if (message.includes("Missing required environment variable")) {
-      return failure("Falta configurar variables de entorno de Supabase en .env.local.", 500);
+      return failure("Faltan variables de entorno de Supabase en el servidor.", 500);
     }
 
     if (message.toLowerCase().includes("permission")) {
