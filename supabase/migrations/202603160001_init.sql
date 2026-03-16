@@ -510,9 +510,9 @@ begin
     return;
   end if;
 
-  if card_row.owner_type = game_row.current_team::card_owner then
-    select count(*) into revealed_count from public.game_cards where game_id = game_row.id and owner_type = game_row.current_team::card_owner and is_revealed = true;
-    select count(*) into total_count from public.game_cards where game_id = game_row.id and owner_type = game_row.current_team::card_owner;
+  if card_row.owner_type = game_row.current_team::text::card_owner then
+    select count(*) into revealed_count from public.game_cards where game_id = game_row.id and owner_type = game_row.current_team::text::card_owner and is_revealed = true;
+    select count(*) into total_count from public.game_cards where game_id = game_row.id and owner_type = game_row.current_team::text::card_owner;
 
     if revealed_count = total_count then
       other_team := case when game_row.current_team = 'red' then 'blue' else 'red' end;
