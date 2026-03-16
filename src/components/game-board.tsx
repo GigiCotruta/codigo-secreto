@@ -4,6 +4,7 @@ import type { GameCardRecord } from "@/types/game";
 interface GameBoardProps {
   cards: GameCardRecord[];
   canReveal: boolean;
+  showOwnership: boolean;
   onReveal: (cardId: string) => Promise<void>;
 }
 
@@ -14,7 +15,21 @@ function revealedClass(owner: GameCardRecord["owner_type"]) {
   return "bg-slate-900 text-white";
 }
 
-export function GameBoard({ cards, canReveal, onReveal }: GameBoardProps) {
+function hiddenOwnershipClass(owner: GameCardRecord["owner_type"]) {
+  if (owner === "red") return "border-red-300 bg-red-100 text-red-900";
+  if (owner === "blue") return "border-blue-300 bg-blue-100 text-blue-900";
+  if (owner === "neutral") return "border-slate-300 bg-slate-200 text-slate-800";
+  return "border-slate-900 bg-black text-white";
+}
+
+function ownerLabel(owner: GameCardRecord["owner_type"]) {
+  if (owner === "red") return "ROJO";
+  if (owner === "blue") return "AZUL";
+  if (owner === "neutral") return "GRIS";
+  return "NEGRA";
+}
+
+export function GameBoard({ cards, canReveal, showOwnership, onReveal }: GameBoardProps) {
   return (
     <section aria-label="Tablero de cartas" className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
       <div className="grid grid-cols-5 gap-2 sm:gap-3">
@@ -29,11 +44,18 @@ export function GameBoard({ cards, canReveal, onReveal }: GameBoardProps) {
               "focus:outline-none focus:ring-2 focus:ring-slate-400",
               card.is_revealed
                 ? revealedClass(card.owner_type)
-                : "bg-slate-100 text-slate-800 hover:-translate-y-0.5 hover:bg-slate-200",
+                : showOwnership
+                  ? hiddenOwnershipClass(card.owner_type)
+                  : "bg-slate-100 text-slate-800 hover:-translate-y-0.5 hover:bg-slate-200",
               !canReveal || card.is_revealed ? "cursor-default" : "cursor-pointer"
             )}
             aria-label={`Carta ${card.word} ${card.is_revealed ? "descubierta" : "oculta"}`}
           >
+            {!card.is_revealed && showOwnership && (
+              <span className="pointer-events-none absolute right-1 top-1 rounded-full bg-white/85 px-1.5 py-0.5 text-[10px] font-black tracking-normal text-slate-900">
+                {ownerLabel(card.owner_type)}
+              </span>
+            )}
             {card.word}
           </button>
         ))}

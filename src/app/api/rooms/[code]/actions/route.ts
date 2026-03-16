@@ -138,6 +138,34 @@ export async function POST(
       return failure("No tienes permiso para esta acción.", 403);
     }
 
+    if (message.includes("Submit a clue first")) {
+      return failure("Primero debes enviar una pista.", 400);
+    }
+
+    if (message.includes("No remaining guesses")) {
+      return failure("No quedan intentos en este turno.", 400);
+    }
+
+    if (message.includes("Current clue already exists")) {
+      return failure("Ya hay una pista activa en este turno.", 400);
+    }
+
+    if (message.includes("Card already revealed")) {
+      return failure("Esa carta ya está descubierta.", 400);
+    }
+
+    if (message.includes("Game is not active")) {
+      return failure("La partida no está activa.", 400);
+    }
+
+    if (message.includes("Game not found")) {
+      return failure("No se encontró la partida de esta sala.", 404);
+    }
+
+    if (message.includes("Player not in room") || message.includes("Player not found in room")) {
+      return failure("Tu sesión no está asociada a esta sala.", 403);
+    }
+
     return failure("No se pudo ejecutar la acción.", 400);
   }
 }

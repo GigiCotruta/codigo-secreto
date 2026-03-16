@@ -148,6 +148,7 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   const canSubmitClue = Boolean(isMyTurnCaptain && !game?.current_clue_word);
   const canEndTurn = Boolean(isMyTurnCaptain && game?.phase === "active");
   const canControlTimer = Boolean(state.me.isCreator || state.me.role === "red_captain" || state.me.role === "blue_captain");
+  const showOwnership = Boolean(state.me.role === "red_captain" || state.me.role === "blue_captain");
 
   if (!game) {
     return (
@@ -275,8 +276,15 @@ export function RoomClient({ roomCode }: RoomClientProps) {
           <GameBoard
             cards={state.cards}
             canReveal={canReveal}
+            showOwnership={showOwnership}
             onReveal={(cardId) => executeAction({ type: "reveal_card", cardId })}
           />
+
+          {showOwnership && (
+            <section className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-700 shadow-sm">
+              Vista de capitán: rojo = equipo rojo, azul = equipo azul, gris = neutral, negra = asesino.
+            </section>
+          )}
 
           <div className="flex flex-wrap gap-2">
             <button
