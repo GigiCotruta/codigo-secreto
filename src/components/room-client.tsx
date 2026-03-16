@@ -150,6 +150,34 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   const canControlTimer = Boolean(state.me.isCreator || state.me.role === "red_captain" || state.me.role === "blue_captain");
   const showOwnership = Boolean(state.me.role === "red_captain" || state.me.role === "blue_captain");
 
+  const revealStatusMessage = (() => {
+    if (!game) {
+      return "Estado de partida no disponible.";
+    }
+
+    if (state.me.role === "spectator") {
+      return "Eres espectador: solo puedes observar la partida.";
+    }
+
+    if (game.phase !== "active") {
+      return "La partida no está activa.";
+    }
+
+    if (!isMyTurnCaptain) {
+      return "No es tu turno para descubrir cartas.";
+    }
+
+    if (!game.current_clue_word) {
+      return "Primero debes enviar una pista (palabra y número).";
+    }
+
+    if (game.remaining_guesses <= 0) {
+      return "No quedan intentos. Termina el turno para continuar.";
+    }
+
+    return "Puedes descubrir cartas ahora.";
+  })();
+
   if (!game) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-10">
@@ -279,6 +307,10 @@ export function RoomClient({ roomCode }: RoomClientProps) {
             showOwnership={showOwnership}
             onReveal={(cardId) => executeAction({ type: "reveal_card", cardId })}
           />
+
+          <section className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm text-slate-700 shadow-sm">
+            {revealStatusMessage}
+          </section>
 
           {showOwnership && (
             <section className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-700 shadow-sm">
