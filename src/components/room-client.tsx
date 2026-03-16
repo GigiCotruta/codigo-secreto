@@ -309,7 +309,14 @@ export function RoomClient({ roomCode }: RoomClientProps) {
             cards={state.cards}
             canReveal={canReveal}
             showOwnership={showOwnership}
-            onReveal={(cardId) => executeAction({ type: "reveal_card", cardId })}
+            onReveal={async (cardId) => {
+              if (!canReveal) {
+                toast.error(revealStatusMessage);
+                return;
+              }
+
+              await executeAction({ type: "reveal_card", cardId });
+            }}
           />
 
           <section className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm text-slate-700 shadow-sm">

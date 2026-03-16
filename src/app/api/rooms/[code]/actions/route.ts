@@ -166,6 +166,16 @@ export async function POST(
       return failure("Tu sesión no está asociada a esta sala.", 403);
     }
 
+    if (
+      message.includes("cannot cast type team_color to card_owner") ||
+      message.includes("invalid input value for enum card_owner")
+    ) {
+      return failure(
+        "El servidor de juego necesita una migración de base de datos pendiente para descubrir cartas.",
+        500
+      );
+    }
+
     return failure("No se pudo ejecutar la acción.", 400);
   }
 }
