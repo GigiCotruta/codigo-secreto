@@ -90,13 +90,13 @@ export default function HomePage() {
           </p>
           <h1 className="mt-3 text-4xl font-black leading-tight text-slate-900 sm:text-5xl">Código Secreto</h1>
           <p className="mt-3 max-w-xl text-slate-700">
-            Crea una sala privada, comparte el enlace y juega online con tu familia o amigos. Solo dos capitanes juegan; el resto observa en directo.
+            Crea una sala privada, comparte el enlace y juega online con tu familia o amigos. Dos capitanes juegan activamente y el resto se reparte entre equipo rojo y azul.
           </p>
 
           <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
             <p>Regla clave de esta versión:</p>
             <p className="mt-1 font-semibold">
-              El capitán del turno da la pista y también revela cartas. Los espectadores no pueden interactuar.
+              El capitán del turno da la pista y también revela cartas. El resto de jugadores tiene equipo asignado y ayuda con ideas.
             </p>
           </div>
 

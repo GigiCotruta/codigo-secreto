@@ -17,7 +17,7 @@ export const clueSchema = z.object({
   number: z.number().int().min(0).max(9),
 });
 
-export const roleSchema = z.enum(["red_captain", "blue_captain", "spectator"]);
+export const roleSchema = z.enum(["red_captain", "blue_captain", "player"]);
 
 export const actionSchema = z.discriminatedUnion("type", [
   z.object({

@@ -4,8 +4,14 @@ import type { RoomStateResult } from "@/types/api";
 const ROLE_LABELS: Record<string, string> = {
   red_captain: "Capitán rojo",
   blue_captain: "Capitán azul",
-  spectator: "Espectador",
+  player: "Jugador",
 };
+
+function teamLabel(team: "red" | "blue" | null) {
+  if (team === "red") return "Equipo rojo";
+  if (team === "blue") return "Equipo azul";
+  return "Sin equipo";
+}
 
 export function PlayerList({ state }: { state: RoomStateResult }) {
   return (
@@ -20,7 +26,9 @@ export function PlayerList({ state }: { state: RoomStateResult }) {
                 <p className="truncate text-sm font-semibold text-slate-800">
                   {player.nickname} {isMe ? "(tú)" : ""}
                 </p>
-                <p className="text-xs text-slate-500">{ROLE_LABELS[player.role]}</p>
+                <p className="text-xs text-slate-500">
+                  {ROLE_LABELS[player.role]} {player.role === "player" ? `• ${teamLabel(player.player_team)}` : ""}
+                </p>
               </div>
               <span
                 className={cn(

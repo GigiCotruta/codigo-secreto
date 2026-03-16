@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CluePanel } from "@/components/clue-panel";
 import { GameBoard } from "@/components/game-board";
@@ -26,8 +26,14 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   const [startingTeam, setStartingTeam] = useState<TeamColor | "random">("random");
   const [joining, setJoining] = useState(false);
   const [acting, setActing] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const { state, loading, error, countdown, sendAction, refresh } = useRoomGame(roomCode, playerToken);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const joinRoom = async () => {
     if (!nickname.trim()) {
@@ -88,7 +94,7 @@ export function RoomClient({ roomCode }: RoomClientProps) {
       <main className="mx-auto flex min-h-screen w-full max-w-xl items-center px-4 py-10">
         <section className="w-full rounded-3xl border border-slate-200 bg-white/85 p-6 shadow-xl backdrop-blur-sm">
           <h1 className="text-2xl font-black text-slate-900">Entrar en la sala {roomCode}</h1>
-          <p className="mt-2 text-sm text-slate-600">Escribe tu apodo para unirte como jugador o espectador.</p>
+          <p className="mt-2 text-sm text-slate-600">Escribe tu apodo para unirte como jugador.</p>
 
           <label className="mt-4 block text-sm font-semibold text-slate-700" htmlFor="nickname-room">
             Apodo
@@ -138,6 +144,8 @@ export function RoomClient({ roomCode }: RoomClientProps) {
     );
   }
 
+  const mePlayer = state.players.find((p) => p.player_token === state.me.playerToken) ?? null;
+
   const redCaptainConnected = state.players.some((p) => p.role === "red_captain" && p.is_connected);
   const blueCaptainConnected = state.players.some((p) => p.role === "blue_captain" && p.is_connected);
   const game = state.game;
@@ -146,11 +154,18 @@ export function RoomClient({ roomCode }: RoomClientProps) {
     ? state.players.find((player) => player.role === roleForTeam(game.current_team) && player.is_connected)
     : null;
 
+  const preparationRemainingSeconds =
+    game?.preparation_ends_at
+      ? Math.max(0, Math.ceil((new Date(game.preparation_ends_at).getTime() - nowMs) / 1000))
+      : 0;
+
+  const isPreparationActive = Boolean(game?.phase === "active" && preparationRemainingSeconds > 0);
+
   const isMyTurnCaptain = game?.phase === "active" && state.me.role === roleForTeam(game.current_team);
-  const canStart = (state.me.isCreator || state.me.role !== "spectator") && redCaptainConnected && blueCaptainConnected;
-  const canReveal = Boolean(isMyTurnCaptain && game?.current_clue_word && game.remaining_guesses > 0);
-  const canSubmitClue = Boolean(isMyTurnCaptain && !game?.current_clue_word);
-  const canEndTurn = Boolean(isMyTurnCaptain && game?.phase === "active");
+  const canStart = (state.me.role === "red_captain" || state.me.role === "blue_captain") && redCaptainConnected && blueCaptainConnected;
+  const canReveal = Boolean(isMyTurnCaptain && !isPreparationActive && game?.current_clue_word && game.remaining_guesses > 0);
+  const canSubmitClue = Boolean(isMyTurnCaptain && !isPreparationActive && !game?.current_clue_word);
+  const canEndTurn = Boolean(isMyTurnCaptain && !isPreparationActive && game?.phase === "active");
   const canControlTimer = Boolean(state.me.isCreator || state.me.role === "red_captain" || state.me.role === "blue_captain");
   const showOwnership = Boolean(state.me.role === "red_captain" || state.me.role === "blue_captain");
 
@@ -159,8 +174,8 @@ export function RoomClient({ roomCode }: RoomClientProps) {
       return "Estado de partida no disponible.";
     }
 
-    if (state.me.role === "spectator") {
-      return "Eres espectador: solo puedes observar la partida.";
+    if (state.me.role === "player") {
+      return "Eres jugador: observa el tablero y ayuda a tu capitán con ideas.";
     }
 
     if (game.phase !== "active") {
@@ -169,6 +184,10 @@ export function RoomClient({ roomCode }: RoomClientProps) {
 
     if (!isMyTurnCaptain) {
       return "No es tu turno para descubrir cartas.";
+    }
+
+    if (isPreparationActive) {
+      return "Fase de estrategia activa: espera a que termine el minuto inicial.";
     }
 
     if (!game.current_clue_word) {
@@ -201,6 +220,15 @@ export function RoomClient({ roomCode }: RoomClientProps) {
             <p className="text-sm text-slate-600">
               Sala: <span className="font-bold text-slate-900">{state.room.code}</span>
             </p>
+            {state.me.role === "player" && (
+              <p className="text-xs font-semibold text-slate-600">
+                Tu equipo: {mePlayer?.player_team === "red"
+                  ? "rojo"
+                  : mePlayer?.player_team === "blue"
+                    ? "azul"
+                    : "sin asignar"}
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -219,6 +247,32 @@ export function RoomClient({ roomCode }: RoomClientProps) {
           </div>
         </div>
       </header>
+
+      {game.phase === "active" && (
+        <section
+          className={`mb-4 rounded-2xl border p-4 shadow-sm ${
+            game.current_team === "blue"
+              ? "border-blue-300 bg-blue-100 text-blue-950"
+              : "border-red-300 bg-red-100 text-red-950"
+          }`}
+          aria-label="Turno actual"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Turno actual</p>
+          <p className="text-2xl font-black">
+            {game.current_team === "blue" ? "Equipo azul" : "Equipo rojo"}
+          </p>
+          <p className="text-sm opacity-90">
+            Capitán activo: {activeCaptain ? activeCaptain.nickname : "capitán no disponible"}
+          </p>
+          {isPreparationActive && (
+            <p className="mt-1 text-sm font-semibold">
+              Estrategia inicial: {Math.floor(preparationRemainingSeconds / 60)
+                .toString()
+                .padStart(2, "0")}:{(preparationRemainingSeconds % 60).toString().padStart(2, "0")}
+            </p>
+          )}
+        </section>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <section className="space-y-4">
@@ -273,7 +327,7 @@ export function RoomClient({ roomCode }: RoomClientProps) {
                   disabled={!canStart || acting}
                   className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
                 >
-                  Iniciar partida
+                  Iniciar partida (1 min de estrategia)
                 </button>
 
                 <button

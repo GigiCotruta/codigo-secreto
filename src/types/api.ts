@@ -25,7 +25,7 @@ export interface JoinRoomResult {
 export interface RoomStateResult extends PublicRoomState {
   me: {
     playerToken: string;
-    role: "red_captain" | "blue_captain" | "spectator";
+    role: "red_captain" | "blue_captain" | "player";
     nickname: string;
     isCreator: boolean;
   };

@@ -34,6 +34,10 @@ export async function POST(
     const action = parsedAction.data;
     const supabase = createServiceSupabaseClient();
 
+    await supabase.rpc("rpc_maybe_finish_preparation", {
+      p_code: roomCode,
+    });
+
     switch (action.type) {
       case "select_role": {
         const { error } = await supabase.rpc("rpc_select_role", {
@@ -150,6 +154,10 @@ export async function POST(
       return failure("Ya hay una pista activa en este turno.", 400);
     }
 
+    if (message.includes("Preparation phase active")) {
+      return failure("Fase de estrategia activa. Espera a que termine el minuto inicial.", 400);
+    }
+
     if (message.includes("Card already revealed")) {
       return failure("Esa carta ya está descubierta.", 400);
     }
@@ -164,6 +172,10 @@ export async function POST(
 
     if (message.includes("Player not in room") || message.includes("Player not found in room")) {
       return failure("Tu sesión no está asociada a esta sala.", 403);
+    }
+
+    if (message.includes("Only captains can start the game")) {
+      return failure("Solo los capitanes pueden iniciar la partida.", 403);
     }
 
     if (

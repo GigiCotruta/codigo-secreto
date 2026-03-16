@@ -1,6 +1,6 @@
 export type TeamColor = "red" | "blue";
 
-export type PlayerRole = "red_captain" | "blue_captain" | "spectator";
+export type PlayerRole = "red_captain" | "blue_captain" | "player";
 
 export type RoomStatus = "lobby" | "active" | "finished";
 
@@ -23,6 +23,7 @@ export interface RoomPlayerRecord {
   player_token: string;
   nickname: string;
   role: PlayerRole;
+  player_team: TeamColor | null;
   is_connected: boolean;
   joined_at: string;
   last_seen_at: string;
@@ -40,6 +41,7 @@ export interface GameRecord {
   timer_remaining_seconds: number;
   timer_status: TimerStatus;
   timer_started_at: string | null;
+  preparation_ends_at: string | null;
   winner_team: TeamColor | null;
   loser_team: TeamColor | null;
   assassin_revealed: boolean;

@@ -13,8 +13,12 @@ export default function HowToPlayPage() {
         <ul className="mt-2 list-disc pl-6 text-slate-700">
           <li>Capitán rojo: juega el turno rojo.</li>
           <li>Capitán azul: juega el turno azul.</li>
-          <li>Espectadores: solo miran, no pueden tocar controles.</li>
+          <li>Jugadores: no tocan controles de partida, pero pertenecen a equipo rojo o azul.</li>
         </ul>
+
+        <p className="mt-2 text-slate-700">
+          Cuando un capitán inicia la partida, los jugadores se reparten automáticamente entre rojo y azul.
+        </p>
 
         <h2 className="mt-6 text-xl font-bold text-slate-900">Qué hace cada capitán</h2>
         <ul className="mt-2 list-disc pl-6 text-slate-700">
@@ -35,6 +39,7 @@ export default function HowToPlayPage() {
 
         <h2 className="mt-6 text-xl font-bold text-slate-900">Temporizador de 2 minutos</h2>
         <ul className="mt-2 list-disc pl-6 text-slate-700">
+          <li>Al iniciar partida hay 1 minuto de estrategia inicial para que los capitanes planifiquen.</li>
           <li>Cada turno arranca con 2:00 para el equipo activo.</li>
           <li>Si un equipo termina antes, empieza al instante el tiempo del otro equipo.</li>
           <li>Si el tiempo llega a 0, el turno cambia automáticamente.</li>

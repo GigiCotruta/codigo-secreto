@@ -4,6 +4,10 @@ import type { RoomStateResult } from "@/types/api";
 export async function getRoomState(roomCode: string, playerToken: string): Promise<RoomStateResult> {
   const supabase = createServiceSupabaseClient();
 
+  await supabase.rpc("rpc_maybe_finish_preparation", {
+    p_code: roomCode,
+  });
+
   await supabase.rpc("rpc_expire_timer", {
     p_code: roomCode,
   });
