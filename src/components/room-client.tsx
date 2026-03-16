@@ -142,6 +142,10 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   const blueCaptainConnected = state.players.some((p) => p.role === "blue_captain" && p.is_connected);
   const game = state.game;
 
+  const activeCaptain = game
+    ? state.players.find((player) => player.role === roleForTeam(game.current_team) && player.is_connected)
+    : null;
+
   const isMyTurnCaptain = game?.phase === "active" && state.me.role === roleForTeam(game.current_team);
   const canStart = (state.me.isCreator || state.me.role !== "spectator") && redCaptainConnected && blueCaptainConnected;
   const canReveal = Boolean(isMyTurnCaptain && game?.current_clue_word && game.remaining_guesses > 0);
@@ -310,6 +314,11 @@ export function RoomClient({ roomCode }: RoomClientProps) {
 
           <section className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm text-slate-700 shadow-sm">
             {revealStatusMessage}
+            {game.phase === "active" && (
+              <p className="mt-1 text-xs text-slate-500">
+                Puede descubrir ahora: {activeCaptain ? activeCaptain.nickname : "capitán no disponible"}.
+              </p>
+            )}
           </section>
 
           {showOwnership && (
