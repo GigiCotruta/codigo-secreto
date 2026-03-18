@@ -188,6 +188,18 @@ export async function POST(
       );
     }
 
-    return failure("No se pudo ejecutar la acción.", 400);
+    if (
+      message.includes("rpc_maybe_finish_preparation") ||
+      message.includes("rpc_submit_clue") ||
+      (message.includes("schema cache") && message.includes("function")) ||
+      (message.includes("function") && message.includes("does not exist"))
+    ) {
+      return failure(
+        "El servidor de juego necesita migraciones de base de datos pendientes. Aplica las migraciones y vuelve a intentarlo.",
+        500
+      );
+    }
+
+    return failure(`No se pudo ejecutar la acción. Detalle: ${message}`, 400);
   }
 }

@@ -50,6 +50,82 @@ select {
   }
 }
 
+@keyframes turn-banner-in {
+  0% {
+    transform: translateY(-14px) scale(0.97);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes winner-modal-in {
+  0% {
+    transform: translateY(18px) scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes winner-confetti-fall {
+  0% {
+    transform: translateY(-24px) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(180px) rotate(420deg);
+    opacity: 0;
+  }
+}
+
+.turn-banner {
+  animation: turn-banner-in 220ms ease;
+}
+
+.winner-modal {
+  position: relative;
+  overflow: hidden;
+  animation: winner-modal-in 300ms ease;
+}
+
+.winner-confetti {
+  pointer-events: none;
+  position: absolute;
+  inset: 8px;
+}
+
+.winner-confetti-piece {
+  position: absolute;
+  top: -16px;
+  width: 10px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  animation-name: winner-confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.winner-confetti-piece:nth-child(3n) {
+  background: linear-gradient(135deg, #0ea5e9, #1d4ed8);
+}
+
+.winner-confetti-piece:nth-child(4n) {
+  background: linear-gradient(135deg, #22c55e, #14b8a6);
+}
+
+.winner-confetti-piece:nth-child(5n) {
+  background: linear-gradient(135deg, #fb7185, #f97316);
+}
+
 [aria-label="Tablero de cartas"] button {
   animation: reveal-pop 180ms ease;
 }

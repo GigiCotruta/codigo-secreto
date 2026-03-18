@@ -9,16 +9,16 @@ interface GameBoardProps {
 }
 
 function revealedClass(owner: GameCardRecord["owner_type"]) {
-  if (owner === "red") return "bg-red-500 text-white";
-  if (owner === "blue") return "bg-blue-500 text-white";
-  if (owner === "neutral") return "bg-amber-300 text-slate-900";
+  if (owner === "red") return "bg-red-600 text-white";
+  if (owner === "blue") return "bg-blue-700 text-white";
+  if (owner === "neutral") return "bg-white text-slate-900";
   return "bg-slate-900 text-white";
 }
 
 function hiddenOwnershipClass(owner: GameCardRecord["owner_type"]) {
-  if (owner === "red") return "border-red-300 bg-red-100 text-red-900";
-  if (owner === "blue") return "border-blue-300 bg-blue-100 text-blue-900";
-  if (owner === "neutral") return "border-slate-300 bg-slate-200 text-slate-800";
+  if (owner === "red") return "border-red-600 bg-red-300 text-red-950";
+  if (owner === "blue") return "border-blue-700 bg-blue-300 text-blue-950";
+  if (owner === "neutral") return "border-slate-300 bg-white text-slate-700";
   return "border-slate-900 bg-black text-white";
 }
 

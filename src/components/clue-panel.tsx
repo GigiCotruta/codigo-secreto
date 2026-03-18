@@ -5,6 +5,7 @@ interface CluePanelProps {
   currentNumber: number | null;
   remainingGuesses: number;
   canSubmit: boolean;
+  hint: string;
   onSubmit: (word: string, number: number) => Promise<void>;
 }
 
@@ -13,6 +14,7 @@ export function CluePanel({
   currentNumber,
   remainingGuesses,
   canSubmit,
+  hint,
   onSubmit,
 }: CluePanelProps) {
   const [word, setWord] = useState("");
@@ -49,7 +51,7 @@ export function CluePanel({
           value={word}
           onChange={(event) => setWord(event.target.value)}
           placeholder="Palabra"
-          disabled={!canSubmit || submitting || Boolean(currentWord)}
+          disabled={!canSubmit || submitting}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-red-400 focus:ring"
           aria-label="Palabra de la pista"
         />
@@ -59,18 +61,19 @@ export function CluePanel({
           max={9}
           value={number}
           onChange={(event) => setNumber(Number(event.target.value))}
-          disabled={!canSubmit || submitting || Boolean(currentWord)}
+          disabled={!canSubmit || submitting}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-red-400 focus:ring"
           aria-label="Número de la pista"
         />
         <button
           type="submit"
-          disabled={!canSubmit || submitting || !word.trim() || Boolean(currentWord)}
+          disabled={!canSubmit || submitting || !word.trim()}
           className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
         >
           Enviar pista
         </button>
       </form>
+      <p className="mt-2 text-xs text-slate-600">{hint}</p>
     </section>
   );
 }

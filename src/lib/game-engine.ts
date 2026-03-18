@@ -50,7 +50,7 @@ export function nextTeam(team: TeamColor): TeamColor {
 }
 
 export function defaultRemainingGuesses(clueNumber: number): number {
-  return clueNumber + 1;
+  return clueNumber;
 }
 
 export function countRevealedByOwner(cards: GameCardRecord[], owner: TeamColor): number {

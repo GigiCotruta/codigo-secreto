@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CluePanel } from "@/components/clue-panel";
 import { GameBoard } from "@/components/game-board";
@@ -27,13 +27,97 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   const [joining, setJoining] = useState(false);
   const [acting, setActing] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [turnBanner, setTurnBanner] = useState<{ team: TeamColor; message: string } | null>(null);
 
   const { state, loading, error, countdown, sendAction, refresh } = useRoomGame(roomCode, playerToken);
+  const previousTurnRef = useRef<{ team: TeamColor | null; phase: string | null }>({
+    team: null,
+    phase: null,
+  });
+  const currentGame = state?.game ?? null;
+  const gamePhase = currentGame?.phase ?? null;
+  const currentTeam = currentGame?.current_team ?? null;
+  const winnerTeam = state?.game?.winner_team;
 
   useEffect(() => {
     const interval = window.setInterval(() => setNowMs(Date.now()), 1000);
     return () => window.clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!currentGame || gamePhase !== "active" || !currentTeam) {
+      previousTurnRef.current = {
+        team: currentTeam,
+        phase: gamePhase,
+      };
+      return;
+    }
+
+    const previous = previousTurnRef.current;
+    const didTurnChange = previous.team !== null && previous.team !== currentTeam;
+    const didGameJustStart = previous.phase !== "active";
+
+    if (didTurnChange || didGameJustStart) {
+      const teamName = currentTeam === "blue" ? "azul" : "rojo";
+      setTurnBanner({
+        team: currentTeam,
+        message: `Turno equipo ${teamName}: el capitán puede escribir la pista.`,
+      });
+    }
+
+    previousTurnRef.current = { team: currentTeam, phase: gamePhase };
+  }, [currentGame, currentTeam, gamePhase]);
+
+  useEffect(() => {
+    if (!turnBanner) return;
+    const timeout = window.setTimeout(() => setTurnBanner(null), 2400);
+    return () => window.clearTimeout(timeout);
+  }, [turnBanner]);
+
+  useEffect(() => {
+    if (!currentGame || gamePhase !== "finished" || !winnerTeam) return;
+
+    let cleanup: (() => void) | undefined;
+
+    void import("canvas-confetti")
+      .then((module) => {
+        const confetti = module.default ?? module;
+        const end = Date.now() + 3000;
+        const colors = winnerTeam === "blue" ? ["#1d4ed8", "#60a5fa", "#bfdbfe"] : ["#b91c1c", "#f87171", "#fecaca"];
+
+        const frame = window.setInterval(() => {
+          confetti({
+            particleCount: 120,
+            spread: 95,
+            startVelocity: 42,
+            zIndex: 120,
+            origin: { x: 0.15, y: 0.68 },
+            colors,
+          });
+          confetti({
+            particleCount: 120,
+            spread: 95,
+            startVelocity: 42,
+            zIndex: 120,
+            origin: { x: 0.85, y: 0.68 },
+            colors,
+          });
+
+          if (Date.now() > end) {
+            window.clearInterval(frame);
+          }
+        }, 280);
+
+        cleanup = () => window.clearInterval(frame);
+      })
+      .catch(() => {
+        // Confetti is a visual enhancement; ignore failures gracefully.
+      });
+
+    return () => {
+      cleanup?.();
+    };
+  }, [currentGame, gamePhase, winnerTeam]);
 
   const joinRoom = async () => {
     if (!nickname.trim()) {
@@ -201,6 +285,30 @@ export function RoomClient({ roomCode }: RoomClientProps) {
     return "Puedes descubrir cartas ahora.";
   })();
 
+  const clueInputHint = (() => {
+    if (!game || game.phase !== "active") {
+      return "La partida debe estar activa para enviar una pista.";
+    }
+
+    if (state.me.role === "player") {
+      return "Solo el capitán activo puede escribir y enviar la pista.";
+    }
+
+    if (!isMyTurnCaptain) {
+      return "No es tu turno de capitán para enviar pista.";
+    }
+
+    if (isPreparationActive) {
+      return "Fase de estrategia activa: espera a que termine el minuto inicial.";
+    }
+
+    if (game.current_clue_word) {
+      return `Ya hay una pista activa: ${game.current_clue_word}, ${game.current_clue_number}.`;
+    }
+
+    return "Escribe una palabra y un número para enviar la pista.";
+  })();
+
   if (!game) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center justify-center px-4 py-10">
@@ -213,6 +321,80 @@ export function RoomClient({ roomCode }: RoomClientProps) {
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6">
+      {turnBanner && (
+        <div className="pointer-events-none fixed inset-x-0 top-6 z-40 flex justify-center px-4">
+          <div
+            className={`turn-banner rounded-2xl border px-6 py-4 text-center shadow-2xl ${
+              turnBanner.team === "blue"
+                ? "border-blue-300 bg-blue-100/95 text-blue-950"
+                : "border-red-300 bg-red-100/95 text-red-950"
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Cambio de turno</p>
+            <p className="text-lg font-black">{turnBanner.message}</p>
+          </div>
+        </div>
+      )}
+
+      {game.phase === "finished" && game.winner_team && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4">
+          <section
+            className={`winner-modal w-full max-w-xl rounded-3xl border-2 p-8 text-center shadow-2xl ${
+              game.winner_team === "blue"
+                ? "border-blue-300 bg-blue-50 text-blue-950"
+                : "border-red-300 bg-red-50 text-red-950"
+            }`}
+            aria-label="Resultado de la partida"
+          >
+            <p className="text-sm font-semibold uppercase tracking-wider opacity-80">Partida terminada</p>
+            <h2 className="mt-3 text-4xl font-black">
+              Gana el equipo {game.winner_team === "blue" ? "azul" : "rojo"}
+            </h2>
+            <p className="mt-2 text-sm opacity-90">
+              Excelente ronda. Puedes iniciar una nueva partida o volver al inicio.
+            </p>
+
+            <div className="winner-confetti" aria-hidden="true">
+              {Array.from({ length: 20 }).map((_, index) => (
+                <span
+                  key={`confetti-${index}`}
+                  className="winner-confetti-piece"
+                  style={{
+                    left: `${5 + index * 4.6}%`,
+                    animationDelay: `${(index % 7) * 0.12}s`,
+                    animationDuration: `${2.1 + (index % 5) * 0.28}s`,
+                  }}
+                />
+              ))}
+            </div>
+
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  void executeAction(
+                    {
+                      type: "new_game",
+                      ...(startingTeam !== "random" ? { forcedStartingTeam: startingTeam } : {}),
+                    },
+                    "Nueva ronda iniciada."
+                  );
+                }}
+                disabled={acting}
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                Nueva ronda
+              </button>
+              <Link href="/" className="rounded-xl border border-current px-4 py-2 text-sm font-semibold">
+                Volver al inicio
+              </Link>
+            </div>
+          </section>
+        </div>
+      )}
+
       <header className="mb-4 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -356,6 +538,7 @@ export function RoomClient({ roomCode }: RoomClientProps) {
             currentNumber={game.current_clue_number}
             remainingGuesses={game.remaining_guesses}
             canSubmit={canSubmitClue}
+            hint={clueInputHint}
             onSubmit={(word, number) => executeAction({ type: "submit_clue", word, number }, "Pista enviada.")}
           />
 

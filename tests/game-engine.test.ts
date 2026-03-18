@@ -34,9 +34,9 @@ describe("turn and reveal rules", () => {
     expect(nextTeam("blue")).toBe("red");
   });
 
-  it("calculates clue guesses as number + 1", () => {
-    expect(defaultRemainingGuesses(0)).toBe(1);
-    expect(defaultRemainingGuesses(2)).toBe(3);
+  it("calculates clue guesses as exact clue number", () => {
+    expect(defaultRemainingGuesses(0)).toBe(0);
+    expect(defaultRemainingGuesses(2)).toBe(2);
   });
 
   it("ends turn on neutral, opponent, and assassin reveals", () => {
