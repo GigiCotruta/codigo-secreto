@@ -28,11 +28,16 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   const [acting, setActing] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [turnBanner, setTurnBanner] = useState<{ team: TeamColor; message: string } | null>(null);
+  const [clueBanner, setClueBanner] = useState<{ team: TeamColor; word: string; number: number } | null>(null);
 
   const { state, loading, error, countdown, sendAction, refresh } = useRoomGame(roomCode, playerToken);
   const previousTurnRef = useRef<{ team: TeamColor | null; phase: string | null }>({
     team: null,
     phase: null,
+  });
+  const previousClueRef = useRef<{ word: string | null; number: number | null }>({
+    word: null,
+    number: null,
   });
   const currentGame = state?.game ?? null;
   const gamePhase = currentGame?.phase ?? null;
@@ -73,6 +78,44 @@ export function RoomClient({ roomCode }: RoomClientProps) {
     const timeout = window.setTimeout(() => setTurnBanner(null), 2400);
     return () => window.clearTimeout(timeout);
   }, [turnBanner]);
+
+  useEffect(() => {
+    if (!currentGame || gamePhase !== "active") {
+      previousClueRef.current = {
+        word: currentGame?.current_clue_word ?? null,
+        number: currentGame?.current_clue_number ?? null,
+      };
+      return;
+    }
+
+    const currentWord = currentGame.current_clue_word;
+    const currentNumber = currentGame.current_clue_number;
+    const previous = previousClueRef.current;
+
+    const isNewClue =
+      Boolean(currentWord) &&
+      currentNumber !== null &&
+      (previous.word !== currentWord || previous.number !== currentNumber);
+
+    if (isNewClue) {
+      setClueBanner({
+        team: currentGame.current_team,
+        word: currentWord ?? "",
+        number: currentNumber ?? 0,
+      });
+    }
+
+    previousClueRef.current = {
+      word: currentWord,
+      number: currentNumber,
+    };
+  }, [currentGame, gamePhase]);
+
+  useEffect(() => {
+    if (!clueBanner) return;
+    const timeout = window.setTimeout(() => setClueBanner(null), 3400);
+    return () => window.clearTimeout(timeout);
+  }, [clueBanner]);
 
   useEffect(() => {
     if (!currentGame || gamePhase !== "finished" || !winnerTeam) return;
@@ -229,6 +272,7 @@ export function RoomClient({ roomCode }: RoomClientProps) {
   }
 
   const mePlayer = state.players.find((p) => p.player_token === state.me.playerToken) ?? null;
+  const myTeam = mePlayer?.player_team ?? null;
 
   const redCaptainConnected = state.players.some((p) => p.role === "red_captain" && p.is_connected);
   const blueCaptainConnected = state.players.some((p) => p.role === "blue_captain" && p.is_connected);
@@ -338,6 +382,25 @@ export function RoomClient({ roomCode }: RoomClientProps) {
         </div>
       )}
 
+      {clueBanner && (
+        <div className="pointer-events-none fixed inset-x-0 top-24 z-40 flex justify-center px-4">
+          <div
+            className={`clue-banner rounded-2xl border px-6 py-4 text-center shadow-2xl ${
+              clueBanner.team === "blue"
+                ? "border-blue-300 bg-blue-100/95 text-blue-950"
+                : "border-red-300 bg-red-100/95 text-red-950"
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Nueva pista</p>
+            <p className="text-2xl font-black">
+              {clueBanner.word}, {clueBanner.number}
+            </p>
+          </div>
+        </div>
+      )}
+
       {game.phase === "finished" && game.winner_team && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4">
           <section
@@ -355,6 +418,12 @@ export function RoomClient({ roomCode }: RoomClientProps) {
             <p className="mt-2 text-sm opacity-90">
               Excelente ronda. Puedes iniciar una nueva partida o volver al inicio.
             </p>
+
+            {state.me.role === "player" && myTeam && (
+              <p className={`mt-3 text-base font-black ${myTeam === "blue" ? "text-blue-900" : "text-red-900"}`}>
+                Tu equipo: {myTeam === "blue" ? "Equipo azul" : "Equipo rojo"}
+              </p>
+            )}
 
             <div className="winner-confetti" aria-hidden="true">
               {Array.from({ length: 20 }).map((_, index) => (
@@ -429,6 +498,20 @@ export function RoomClient({ roomCode }: RoomClientProps) {
           </div>
         </div>
       </header>
+
+      {state.me.role === "player" && myTeam && game.phase !== "lobby" && (
+        <section
+          className={`mb-4 rounded-2xl border-2 p-4 shadow-sm ${
+            myTeam === "blue"
+              ? "border-blue-700 bg-blue-300 text-blue-950"
+              : "border-red-700 bg-red-300 text-red-950"
+          }`}
+          aria-label="Tu equipo"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider opacity-85">Tu equipo</p>
+          <p className="text-3xl font-black">{myTeam === "blue" ? "Equipo azul" : "Equipo rojo"}</p>
+        </section>
+      )}
 
       {game.phase === "active" && (
         <section

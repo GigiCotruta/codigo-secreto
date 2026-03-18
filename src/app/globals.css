@@ -90,6 +90,10 @@ select {
   animation: turn-banner-in 220ms ease;
 }
 
+.clue-banner {
+  animation: turn-banner-in 220ms ease;
+}
+
 .winner-modal {
   position: relative;
   overflow: hidden;
