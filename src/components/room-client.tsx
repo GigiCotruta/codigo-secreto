@@ -10,6 +10,7 @@ import { RoleSelector } from "@/components/role-selector";
 import { TimerPanel } from "@/components/timer-panel";
 import { useRoomGame } from "@/hooks/use-room-game";
 import { getLastNickname, getStoredPlayerToken, setLastNickname, setStoredPlayerToken } from "@/lib/storage";
+import { formatSeconds } from "@/lib/utils";
 import type { TeamColor } from "@/types/game";
 
 interface RoomClientProps {
@@ -515,22 +516,44 @@ export function RoomClient({ roomCode }: RoomClientProps) {
 
       {game.phase === "active" && (
         <section
-          className={`mb-4 rounded-2xl border p-4 shadow-sm ${
+          className={`sticky top-2 z-30 mb-4 rounded-2xl border px-3 py-2 shadow-sm backdrop-blur-sm ${
             game.current_team === "blue"
-              ? "border-blue-300 bg-blue-100 text-blue-950"
-              : "border-red-300 bg-red-100 text-red-950"
+              ? "border-blue-400 bg-blue-100/95 text-blue-950"
+              : "border-red-400 bg-red-100/95 text-red-950"
           }`}
           aria-label="Turno actual"
         >
-          <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Turno actual</p>
-          <p className="text-2xl font-black">
-            {game.current_team === "blue" ? "Equipo azul" : "Equipo rojo"}
-          </p>
-          <p className="text-sm opacity-90">
-            Capitán activo: {activeCaptain ? activeCaptain.nickname : "capitán no disponible"}
-          </p>
+          <div className="grid gap-2 sm:grid-cols-3 sm:items-center">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">Turno actual</p>
+              <p className="text-base font-black">{game.current_team === "blue" ? "Equipo azul" : "Equipo rojo"}</p>
+              <p className="text-xs opacity-90">Capitán: {activeCaptain ? activeCaptain.nickname : "no disponible"}</p>
+            </div>
+
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">Temporizador</p>
+              <p className={`text-base font-black tabular-nums ${countdown <= 20 ? "text-red-600" : ""}`}>{formatSeconds(countdown)}</p>
+              <p className="text-xs opacity-80">
+                {game.timer_status === "running"
+                  ? "En marcha"
+                  : game.timer_status === "paused"
+                    ? "Pausado"
+                    : "Detenido"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">Pista</p>
+              <p className="text-base font-black">
+                {game.current_clue_word && game.current_clue_number !== null
+                  ? `${game.current_clue_word}, ${game.current_clue_number}`
+                  : "Sin pista"}
+              </p>
+              <p className="text-xs opacity-80">Intentos restantes: {game.remaining_guesses}</p>
+            </div>
+          </div>
           {isPreparationActive && (
-            <p className="mt-1 text-sm font-semibold">
+            <p className="mt-1 text-xs font-semibold">
               Estrategia inicial: {Math.floor(preparationRemainingSeconds / 60)
                 .toString()
                 .padStart(2, "0")}:{(preparationRemainingSeconds % 60).toString().padStart(2, "0")}
@@ -541,80 +564,70 @@ export function RoomClient({ roomCode }: RoomClientProps) {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <section className="space-y-4">
-          <section className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-600">Estado de la partida</h2>
-            {game.phase === "lobby" && (
+          {game.phase === "lobby" && (
+            <section className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-600">Estado de la partida</h2>
               <p className="mt-2 text-sm text-slate-700">Esperando a que haya un capitán rojo y uno azul para empezar.</p>
-            )}
-            {game.phase === "active" && (
-              <p className="mt-2 text-sm font-semibold text-slate-700">
-                Turno actual: {game.current_team === "red" ? "Equipo rojo" : "Equipo azul"}
-              </p>
-            )}
-            {game.phase === "finished" && (
-              <p className="mt-2 text-sm font-semibold text-emerald-700">
-                Partida terminada. Ganador: {game.winner_team === "red" ? "equipo rojo" : "equipo azul"}.
-              </p>
-            )}
 
-            <div className="mt-3 space-y-2">
-              <RoleSelector
-                players={state.players}
-                currentRole={state.me.role}
-                onSelectRole={(role) => executeAction({ type: "select_role", role }, "Rol actualizado.")}
-                disabled={acting}
-              />
-
-              <div className="flex flex-wrap gap-2">
-                <select
-                  value={startingTeam}
-                  onChange={(event) => setStartingTeam(event.target.value as TeamColor | "random")}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  aria-label="Equipo inicial"
-                >
-                  <option value="random">Inicio aleatorio</option>
-                  <option value="red">Empieza rojo</option>
-                  <option value="blue">Empieza azul</option>
-                </select>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!canStart) return;
-                    void executeAction(
-                      {
-                        type: "start_game",
-                        ...(startingTeam !== "random" ? { forcedStartingTeam: startingTeam } : {}),
-                      },
-                      "Partida iniciada."
-                    );
-                  }}
-                  disabled={!canStart || acting}
-                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
-                >
-                  Iniciar partida (1 min de estrategia)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!window.confirm("¿Seguro que quieres empezar una partida nueva?")) return;
-                    void executeAction(
-                      {
-                        type: "new_game",
-                        ...(startingTeam !== "random" ? { forcedStartingTeam: startingTeam } : {}),
-                      },
-                      "Nueva partida creada."
-                    );
-                  }}
+              <div className="mt-3 space-y-2">
+                <RoleSelector
+                  players={state.players}
+                  currentRole={state.me.role}
+                  onSelectRole={(role) => executeAction({ type: "select_role", role }, "Rol actualizado.")}
                   disabled={acting}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                >
-                  Nueva partida
-                </button>
+                />
+
+                <div className="flex flex-wrap gap-2">
+                  <select
+                    value={startingTeam}
+                    onChange={(event) => setStartingTeam(event.target.value as TeamColor | "random")}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    aria-label="Equipo inicial"
+                  >
+                    <option value="random">Inicio aleatorio</option>
+                    <option value="red">Empieza rojo</option>
+                    <option value="blue">Empieza azul</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!canStart) return;
+                      void executeAction(
+                        {
+                          type: "start_game",
+                          ...(startingTeam !== "random" ? { forcedStartingTeam: startingTeam } : {}),
+                        },
+                        "Partida iniciada."
+                      );
+                    }}
+                    disabled={!canStart || acting}
+                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
+                  >
+                    Iniciar partida (1 min de estrategia)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!window.confirm("¿Seguro que quieres empezar una partida nueva?")) return;
+                      void executeAction(
+                        {
+                          type: "new_game",
+                          ...(startingTeam !== "random" ? { forcedStartingTeam: startingTeam } : {}),
+                        },
+                        "Nueva partida creada."
+                      );
+                    }}
+                    disabled={acting}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  >
+                    Nueva partida
+                  </button>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           <CluePanel
             currentWord={game.current_clue_word}
@@ -624,6 +637,17 @@ export function RoomClient({ roomCode }: RoomClientProps) {
             hint={clueInputHint}
             onSubmit={(word, number) => executeAction({ type: "submit_clue", word, number }, "Pista enviada.")}
           />
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => executeAction({ type: "end_turn" }, "Turno terminado.")}
+              disabled={!canEndTurn || acting}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            >
+              Terminar turno
+            </button>
+          </div>
 
           <GameBoard
             cards={state.cards}
@@ -654,16 +678,6 @@ export function RoomClient({ roomCode }: RoomClientProps) {
             </section>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => executeAction({ type: "end_turn" }, "Turno terminado.")}
-              disabled={!canEndTurn || acting}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-            >
-              Terminar turno
-            </button>
-          </div>
         </section>
 
         <aside className="space-y-4">
