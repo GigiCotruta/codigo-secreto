@@ -49,6 +49,17 @@ export async function getRoomState(roomCode: string, playerToken: string): Promi
     throw new Error(cardsError.message);
   }
 
+  const { data: events, error: eventsError } = await supabase
+    .from("game_events")
+    .select("*")
+    .eq("game_id", game.id)
+    .order("created_at", { ascending: false })
+    .limit(40);
+
+  if (eventsError) {
+    throw new Error(eventsError.message);
+  }
+
   const me = players?.find((player) => player.player_token === playerToken);
 
   if (!me) {
@@ -60,6 +71,7 @@ export async function getRoomState(roomCode: string, playerToken: string): Promi
     players: players ?? [],
     game,
     cards: cards ?? [],
+    events: events ?? [],
     me: {
       playerToken,
       role: me.role,

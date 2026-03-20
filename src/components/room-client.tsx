@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CluePanel } from "@/components/clue-panel";
+import { GameLog } from "@/components/game-log";
 import { GameBoard } from "@/components/game-board";
 import { PlayerList } from "@/components/player-list";
 import { RoleSelector } from "@/components/role-selector";
+import { TeamPanel } from "@/components/team-panel";
 import { TimerPanel } from "@/components/timer-panel";
 import { useRoomGame } from "@/hooks/use-room-game";
 import { getLastNickname, getStoredPlayerToken, setLastNickname, setStoredPlayerToken } from "@/lib/storage";
@@ -289,10 +291,12 @@ export function RoomClient({ roomCode }: RoomClientProps) {
       : 0;
 
   const isPreparationActive = Boolean(game?.phase === "active" && preparationRemainingSeconds > 0);
+  const visibleCountdown = isPreparationActive ? preparationRemainingSeconds : countdown;
 
   const isMyTurnCaptain = game?.phase === "active" && state.me.role === roleForTeam(game.current_team);
+  const isOnCurrentTeam = Boolean(game?.phase === "active" && mePlayer?.player_team === game.current_team);
   const canStart = (state.me.role === "red_captain" || state.me.role === "blue_captain") && redCaptainConnected && blueCaptainConnected;
-  const canReveal = Boolean(isMyTurnCaptain && !isPreparationActive && game?.current_clue_word && game.remaining_guesses > 0);
+  const canReveal = Boolean(isOnCurrentTeam && !isPreparationActive && game?.current_clue_word && game.remaining_guesses > 0);
   const canSubmitClue = Boolean(isMyTurnCaptain && !isPreparationActive && !game?.current_clue_word);
   const canEndTurn = Boolean(isMyTurnCaptain && !isPreparationActive && game?.phase === "active");
   const canControlTimer = Boolean(state.me.isCreator || state.me.role === "red_captain" || state.me.role === "blue_captain");
@@ -303,16 +307,12 @@ export function RoomClient({ roomCode }: RoomClientProps) {
       return "Estado de partida no disponible.";
     }
 
-    if (state.me.role === "player") {
-      return "Eres jugador: observa el tablero y ayuda a tu capitán con ideas.";
-    }
-
     if (game.phase !== "active") {
       return "La partida no está activa.";
     }
 
-    if (!isMyTurnCaptain) {
-      return "No es tu turno para descubrir cartas.";
+    if (!isOnCurrentTeam) {
+      return `Vota el equipo ${game.current_team === "blue" ? "azul" : "rojo"}.`;
     }
 
     if (isPreparationActive) {
@@ -327,7 +327,7 @@ export function RoomClient({ roomCode }: RoomClientProps) {
       return "No quedan intentos. Termina el turno para continuar.";
     }
 
-    return "Puedes descubrir cartas ahora.";
+    return "Pulsa una carta para votar. Se descubre cuando todo tu equipo confirma la misma carta.";
   })();
 
   const clueInputHint = (() => {
@@ -520,7 +520,9 @@ export function RoomClient({ roomCode }: RoomClientProps) {
 
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider opacity-80">Temporizador</p>
-              <p className={`text-base font-black tabular-nums ${countdown <= 20 ? "text-red-600" : ""}`}>{formatSeconds(countdown)}</p>
+              <p className={`text-base font-black tabular-nums ${visibleCountdown <= 20 ? "text-red-600" : ""}`}>
+                {formatSeconds(visibleCountdown)}
+              </p>
               <p className="text-xs opacity-80">
                 {game.timer_status === "running"
                   ? "En marcha"
@@ -540,17 +542,20 @@ export function RoomClient({ roomCode }: RoomClientProps) {
               <p className="text-xs opacity-80">Intentos restantes: {game.remaining_guesses}</p>
             </div>
           </div>
-          {isPreparationActive && (
-            <p className="mt-1 text-xs font-semibold">
-              Estrategia inicial: {Math.floor(preparationRemainingSeconds / 60)
-                .toString()
-                .padStart(2, "0")}:{(preparationRemainingSeconds % 60).toString().padStart(2, "0")}
-            </p>
-          )}
         </section>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+      <div
+        className={`grid gap-4 ${
+          game.phase === "lobby" ? "lg:grid-cols-[1fr_320px]" : "lg:grid-cols-[260px_1fr_300px]"
+        }`}
+      >
+        {game.phase !== "lobby" && (
+          <aside className="space-y-4">
+            <TeamPanel state={state} team="blue" />
+          </aside>
+        )}
+
         <section className="space-y-4">
           {game.phase === "lobby" && (
             <section className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
@@ -641,7 +646,12 @@ export function RoomClient({ roomCode }: RoomClientProps) {
                 return;
               }
 
-              await executeAction({ type: "reveal_card", cardId });
+              const selectedCard = state.cards.find((card) => card.id === cardId);
+              if (!window.confirm(`Confirmar voto para ${selectedCard?.word ?? "esta carta"}?`)) {
+                return;
+              }
+
+              await executeAction({ type: "reveal_card", cardId }, "Voto enviado.");
             }}
           />
 
@@ -666,7 +676,7 @@ export function RoomClient({ roomCode }: RoomClientProps) {
 
         <aside className="space-y-4">
           <TimerPanel
-            countdown={countdown}
+            countdown={visibleCountdown}
             status={game.timer_status}
             canControl={canControlTimer}
             onPause={() => void executeAction({ type: "timer_pause" }, "Temporizador en pausa.")}
@@ -676,7 +686,14 @@ export function RoomClient({ roomCode }: RoomClientProps) {
               void executeAction({ type: "timer_reset" }, "Temporizador reiniciado.");
             }}
           />
-          <PlayerList state={state} />
+          {game.phase === "lobby" ? (
+            <PlayerList state={state} />
+          ) : (
+            <>
+              <TeamPanel state={state} team="red" />
+              <GameLog events={state.events} />
+            </>
+          )}
         </aside>
       </div>
     </main>

@@ -125,6 +125,18 @@ export function useRoomGame(roomCode: string, playerToken: string | null): RoomG
           void refresh();
         }
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "game_events",
+          filter: `game_id=eq.${state.game.id}`,
+        },
+        () => {
+          void refresh();
+        }
+      )
       .subscribe();
 
     channels.push(gameChannel);

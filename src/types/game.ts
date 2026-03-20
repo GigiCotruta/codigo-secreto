@@ -60,6 +60,14 @@ export interface GameCardRecord {
   revealed_at: string | null;
 }
 
+export interface GameEventRecord {
+  id: number;
+  game_id: string;
+  event_type: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface TurnClue {
   word: string;
   number: number;
@@ -75,4 +83,5 @@ export interface PublicRoomState {
   players: RoomPlayerRecord[];
   game: GameRecord | null;
   cards: GameCardRecord[];
+  events: GameEventRecord[];
 }

@@ -84,7 +84,7 @@ export async function POST(
         break;
       }
       case "reveal_card": {
-        const { error } = await supabase.rpc("rpc_reveal_card", {
+        const { error } = await supabase.rpc("rpc_vote_reveal_card", {
           p_code: roomCode,
           p_player_token: playerToken,
           p_card_id: action.cardId,
@@ -148,6 +148,18 @@ export async function POST(
 
     if (message.includes("No remaining guesses")) {
       return failure("No quedan intentos en este turno.", 400);
+    }
+
+    if (message.includes("Player must belong to current team")) {
+      return failure("Solo los jugadores del equipo en turno pueden votar carta.", 403);
+    }
+
+    if (message.includes("Player is disconnected")) {
+      return failure("Debes estar conectado para votar carta.", 403);
+    }
+
+    if (message.includes("No connected team players")) {
+      return failure("No hay jugadores conectados en el equipo actual.", 400);
     }
 
     if (message.includes("Current clue already exists")) {
