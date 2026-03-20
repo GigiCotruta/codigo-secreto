@@ -11,7 +11,7 @@ interface GameBoardProps {
 function revealedClass(owner: GameCardRecord["owner_type"]) {
   if (owner === "red") return "bg-red-600 text-white";
   if (owner === "blue") return "bg-blue-700 text-white";
-  if (owner === "neutral") return "bg-white text-slate-900";
+  if (owner === "neutral") return "bg-yellow-300 text-slate-900";
   return "bg-slate-900 text-white";
 }
 
