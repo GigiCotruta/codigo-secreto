@@ -30,6 +30,10 @@ function ownerLabel(owner: GameCardRecord["owner_type"]) {
 }
 
 export function GameBoard({ cards, canReveal, showOwnership, onReveal }: GameBoardProps) {
+  if (cards.length === 0) {
+    return null;
+  }
+
   return (
     <section aria-label="Tablero de cartas" className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm">
       <div className="grid grid-cols-5 gap-2 sm:gap-3">

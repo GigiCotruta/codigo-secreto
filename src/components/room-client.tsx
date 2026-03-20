@@ -635,19 +635,13 @@ export function RoomClient({ roomCode }: RoomClientProps) {
             remainingGuesses={game.remaining_guesses}
             canSubmit={canSubmitClue}
             hint={clueInputHint}
+            canEndTurn={canEndTurn}
+            endTurnDisabled={acting}
+            onEndTurn={() => {
+              void executeAction({ type: "end_turn" }, "Turno terminado.");
+            }}
             onSubmit={(word, number) => executeAction({ type: "submit_clue", word, number }, "Pista enviada.")}
           />
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => executeAction({ type: "end_turn" }, "Turno terminado.")}
-              disabled={!canEndTurn || acting}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-            >
-              Terminar turno
-            </button>
-          </div>
 
           <GameBoard
             cards={state.cards}

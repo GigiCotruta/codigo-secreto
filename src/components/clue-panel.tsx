@@ -6,6 +6,9 @@ interface CluePanelProps {
   remainingGuesses: number;
   canSubmit: boolean;
   hint: string;
+  canEndTurn?: boolean;
+  onEndTurn?: () => void;
+  endTurnDisabled?: boolean;
   onSubmit: (word: string, number: number) => Promise<void>;
 }
 
@@ -15,6 +18,9 @@ export function CluePanel({
   remainingGuesses,
   canSubmit,
   hint,
+  canEndTurn,
+  onEndTurn,
+  endTurnDisabled,
   onSubmit,
 }: CluePanelProps) {
   const [word, setWord] = useState("");
@@ -46,7 +52,7 @@ export function CluePanel({
         <p className="text-xs text-slate-500">Intentos restantes: {remainingGuesses}</p>
       </div>
 
-      <form onSubmit={submitClue} className="mt-3 grid gap-2 sm:grid-cols-[1fr_96px_auto]">
+      <form onSubmit={submitClue} className="mt-3 grid gap-2 sm:grid-cols-[1fr_96px_auto_auto]">
         <input
           value={word}
           onChange={(event) => setWord(event.target.value)}
@@ -71,6 +77,14 @@ export function CluePanel({
           className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
         >
           Enviar pista
+        </button>
+        <button
+          type="button"
+          onClick={onEndTurn}
+          disabled={!canEndTurn || endTurnDisabled}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+        >
+          Terminar turno
         </button>
       </form>
       <p className="mt-2 text-xs text-slate-600">{hint}</p>
