@@ -465,53 +465,41 @@ export function RoomClient({ roomCode }: RoomClientProps) {
         </div>
       )}
 
-      <header className="mb-4 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">Código Secreto</h1>
-            <p className="text-sm text-slate-600">
-              Sala: <span className="font-bold text-slate-900">{state.room.code}</span>
-            </p>
-            {state.me.role === "player" && (
-              <p className="text-xs font-semibold text-slate-600">
-                Tu equipo: {mePlayer?.player_team === "red"
-                  ? "rojo"
-                  : mePlayer?.player_team === "blue"
-                    ? "azul"
-                    : "sin asignar"}
+      {game.phase === "lobby" && (
+        <header className="mb-4 rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">Código Secreto</h1>
+              <p className="text-sm text-slate-600">
+                Sala: <span className="font-bold text-slate-900">{state.room.code}</span>
               </p>
-            )}
+              {state.me.role === "player" && (
+                <p className="text-xs font-semibold text-slate-600">
+                  Tu equipo: {mePlayer?.player_team === "red"
+                    ? "rojo"
+                    : mePlayer?.player_team === "blue"
+                      ? "azul"
+                      : "sin asignar"}
+                </p>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(shareLink);
+                  toast.success("Enlace copiado.");
+                }}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+              >
+                Copiar enlace
+              </button>
+              <Link href="/" className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
+                Volver al inicio
+              </Link>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={async () => {
-                await navigator.clipboard.writeText(shareLink);
-                toast.success("Enlace copiado.");
-              }}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
-            >
-              Copiar enlace
-            </button>
-            <Link href="/" className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm">
-              Volver al inicio
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {state.me.role === "player" && myTeam && game.phase !== "lobby" && (
-        <section
-          className={`mb-4 rounded-2xl border-2 p-4 shadow-sm ${
-            myTeam === "blue"
-              ? "border-blue-700 bg-blue-300 text-blue-950"
-              : "border-red-700 bg-red-300 text-red-950"
-          }`}
-          aria-label="Tu equipo"
-        >
-          <p className="text-xs font-semibold uppercase tracking-wider opacity-85">Tu equipo</p>
-          <p className="text-3xl font-black">{myTeam === "blue" ? "Equipo azul" : "Equipo rojo"}</p>
-        </section>
+        </header>
       )}
 
       {game.phase === "active" && (
