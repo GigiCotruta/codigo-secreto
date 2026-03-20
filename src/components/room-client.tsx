@@ -657,14 +657,16 @@ export function RoomClient({ roomCode }: RoomClientProps) {
             }}
           />
 
-          <section className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm text-slate-700 shadow-sm">
-            {revealStatusMessage}
-            {game.phase === "active" && (
-              <p className="mt-1 text-xs text-slate-500">
-                Puede descubrir ahora: {activeCaptain ? activeCaptain.nickname : "capitán no disponible"}.
-              </p>
-            )}
-          </section>
+          {game.phase !== "lobby" && (
+            <section className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-sm text-slate-700 shadow-sm">
+              {revealStatusMessage}
+              {game.phase === "active" && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Puede descubrir ahora: {activeCaptain ? activeCaptain.nickname : "capitán no disponible"}.
+                </p>
+              )}
+            </section>
+          )}
 
           {showOwnership && (
             <section className="rounded-2xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-700 shadow-sm">
